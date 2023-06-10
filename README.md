@@ -7,8 +7,8 @@
 ---
 
 <p align="center">
-  core application
+  core toolkit for building and launching apps
 
 ---
 
-This repository contains the source code for the core application provided by **fluxo**, a general-purpose neural interface. This document provides instructions on how to use the core application, how to extend it to suit your own needs, and how to contribute your improvements back to this repository.
+This repository contains the source code for the core toolkit provided by **fluxo** designed for building and launching apps.
