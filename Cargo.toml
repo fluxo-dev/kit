@@ -2,11 +2,11 @@
 name = "fluxo"
 version = "0.1.0"
 edition = "2021"
-description = "a general-purpose neural interface"
+description = "toolkit for building and launching apps"
 authors = ["Anu Sharma <anu@fluxo.dev>", "Ramnath R Iyer <rri@fluxo.dev>"]
 license = "Apache-2.0"
 readme = "README.md"
-repository = "https://github.com/fluxo-dev/app"
+repository = "https://github.com/fluxo-dev/fluxo"
 categories = ["compilers"]
 keywords = ["compilers"]
 
