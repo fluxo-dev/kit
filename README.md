@@ -3,11 +3,13 @@
     src="https://raw.githubusercontent.com/fluxo-dev/.github/main/assets/fluxo-banner.webp"
     width="300px"
     alt="" />
+</p>
 
 ---
 
 <p align="center">
-  core toolkit for building and launching apps
+  toolkit for building and launching apps
+</p>
 
 ---
 
