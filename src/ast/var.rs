@@ -1,9 +1,8 @@
 //! Variable, which is one of the atomic constituents of any [expression][super::Exp].
 
-use super::OverflowErr;
+use crate::err::SystemErr;
+use crate::fmt::Formatted;
 use std::fmt::{Display, Formatter};
-
-type Formatted = std::fmt::Result;
 
 /// Variable, which is one of the atomic constituents of any [expression][super::Exp].
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -34,11 +33,13 @@ pub struct Sym {
 /// binder. Using the De Bruijn makes it easy to evaluate expressions without the need for complex,
 /// α-substitution methods having to be applied. We support indexes up to [u64::MAX]; this gives us
 /// an upper bound on the complexity of expressions that the system supports.
-#[derive(Clone, Copy, Default, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 #[non_exhaustive]
 pub struct Idx {
     /// Numeric value of this index.
     pub val: u64,
+    /// Symbol of the bound variable that this index refers to.
+    pub sym: Sym,
 }
 
 impl Sym {
@@ -52,18 +53,22 @@ impl Sym {
 
 impl Idx {
     /// Create a new instance of an index with value 0.
-    pub fn new() -> Self {
-        Self { val: 0 }
+    pub fn new(sym: &Sym) -> Self {
+        Self {
+            val: 0,
+            sym: sym.clone(),
+        }
     }
 
     /// Create a new instance of an index with a higher value.
-    pub fn inc(&self) -> Result<Self, OverflowErr> {
+    pub fn inc(&self) -> Result<Self, SystemErr> {
         self.val
             .checked_add(1)
-            .map(|val| Self { val })
-            .ok_or_else(|| OverflowErr {
-                msg: format!("Unable to construct index with value > {}!", self.val),
+            .map(|val| Self {
+                val,
+                sym: self.sym.clone(),
             })
+            .ok_or(SystemErr::MaxLimitIdx(self.val))
     }
 
     /// Create a new instance of an index with a lower value.
@@ -72,7 +77,10 @@ impl Idx {
     /// <strong>Warning:</strong> This method panics when called if the current index value is 0.
     /// </p>
     pub fn dec(&self) -> Self {
-        Self { val: self.val - 1 }
+        Self {
+            val: self.val - 1,
+            sym: self.sym.clone(),
+        }
     }
 }
 
@@ -116,14 +124,17 @@ mod test {
 
     #[test]
     fn test_inc() {
-        let o1 = Idx::new();
+        let o1 = Idx::new(&Sym::new("foo"));
         assert!(o1.inc().is_ok());
         assert_eq!(o1.inc().unwrap().val, 1);
     }
 
     #[test]
     fn test_inc_overflow() {
-        let o1 = Idx { val: u64::MAX - 1 };
+        let o1 = Idx {
+            val: u64::MAX - 1,
+            sym: Sym::new("foo"),
+        };
         assert!(o1.inc().is_ok());
         assert_eq!(o1.inc().unwrap().val, u64::MAX);
 
@@ -134,8 +145,8 @@ mod test {
     #[test]
     #[should_panic(expected = "attempt to subtract with overflow")]
     fn test_dec_panic() {
-        let o1 = Idx::new().inc().unwrap();
-        assert_eq!(o1.dec(), Idx::new());
+        let o1 = Idx::new(&Sym::new("foo")).inc().unwrap();
+        assert_eq!(o1.dec(), Idx::new(&Sym::new("foo")));
 
         let o2 = o1.dec();
         o2.dec(); // panic expected
@@ -148,10 +159,13 @@ mod test {
     }
 
     #[test]
-    fn test_display_idx() -> Result<(), OverflowErr> {
-        let o1 = Idx::new();
+    fn test_display_idx() -> Result<(), SystemErr> {
+        let o1 = Idx::new(&Sym::new("foo"));
         let o2 = o1.inc()?;
-        let o3 = Idx { val: 3944 };
+        let o3 = Idx {
+            val: 3944,
+            sym: Sym::new("foo"),
+        };
         assert_eq!(o1.to_string(), "0");
         assert_eq!(o2.to_string(), "1");
         assert_eq!(o3.to_string(), "3944");

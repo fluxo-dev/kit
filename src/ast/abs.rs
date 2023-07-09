@@ -1,6 +1,7 @@
 //! λ-abstraction, aka anonymous function, and related behaviors.
 
-use super::{Binder, Exp, Idx, OverflowErr, Sym};
+use super::{Binder, Exp, Idx, Sym};
+use crate::err::SystemErr;
 
 /// λ-abstraction, aka anonymous function, which maps one expression to another.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -16,8 +17,8 @@ pub struct Abs {
 
 impl Abs {
     /// Create a new instance of a [λ-abstraction][Abs].
-    pub fn new(sym: Sym, typ: Exp, mut exp: Exp) -> Result<Self, OverflowErr> {
-        exp.index(&sym, &Idx::new())?;
+    pub fn new(sym: Sym, typ: Exp, mut exp: Exp) -> Result<Self, SystemErr> {
+        exp.index(&sym, &Idx::new(&sym))?;
         Ok(Self {
             sym,
             typ: Box::new(typ),

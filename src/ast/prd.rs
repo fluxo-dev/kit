@@ -1,6 +1,7 @@
 //! Π-type, aka product type, and related behaviors.
 
-use super::{Binder, Exp, Idx, OverflowErr, Sym};
+use super::{Binder, Exp, Idx, Sym};
+use crate::err::SystemErr;
 
 /// Π-type, aka product type, which is a constructor for types.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -16,8 +17,8 @@ pub struct Prd {
 
 impl Prd {
     /// Create a new instance of a [Π-type][Prd].
-    pub fn new(sym: Sym, typ: Exp, mut exp: Exp) -> Result<Self, OverflowErr> {
-        exp.index(&sym, &Idx::new())?;
+    pub fn new(sym: Sym, typ: Exp, mut exp: Exp) -> Result<Self, SystemErr> {
+        exp.index(&sym, &Idx::new(&sym))?;
         Ok(Self {
             sym,
             typ: Box::new(typ),

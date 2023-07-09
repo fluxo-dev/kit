@@ -9,5 +9,11 @@ readme = "README.md"
 repository = "https://github.com/fluxo-dev/fluxo"
 categories = ["compilers"]
 keywords = ["compilers"]
+build = "build.rs"
+
+[build-dependencies]
+lalrpop = "0.20.0"
 
 [dependencies]
+lalrpop-util = { version = "0.20.0", features = ["lexer", "regex", "unicode"] }
+logos = "0.13.0"

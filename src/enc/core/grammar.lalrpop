@@ -1,0 +1,60 @@
+use crate::ast::{Abs, App, Exp, Prd, Sum, Sym, Unv, Var};
+use crate::enc::core::lex::Tok;
+use crate::err::DecodeErr;
+use lalrpop_util::ParseError;
+
+grammar;
+
+pub Exp: Exp = {
+    <Obj>,
+    <app:App> => Exp::App(app),
+    <abs:Abs> => Exp::Abs(abs),
+    <prd:Prd> => Exp::Prd(prd),
+    <sum:Sum> => Exp::Sum(sum),
+
+}
+
+Obj: Exp = {
+    <var:Var> => Exp::Var(var),
+    <unv:Unv> => Exp::Unv(unv),
+    "(" <Exp> ")"
+}
+
+Pat: Sym = <sym:"$"> => Sym::new(sym.as_str());
+Sym: Sym = <sym:"$"> => Sym::new(sym.as_str());
+
+Var: Var = <sym:Sym> => Var::Sym(sym);
+App: App = <fst:Fst> <snd:Snd> => App::new(fst, snd);
+Abs: Abs = "λ" <pat:Pat> ":" <typ:Exp> "." <exp:Exp> =>? Abs::new(pat, typ, exp).map_err(|err| ParseError::User { error: DecodeErr::SystemErr(err) });
+Prd: Prd = "Π" <pat:Pat> ":" <typ:Exp> "." <exp:Exp> =>? Prd::new(pat, typ, exp).map_err(|err| ParseError::User { error: DecodeErr::SystemErr(err) });
+Sum: Sum = "Σ" <pat:Pat> ":" <typ:Exp> "." <exp:Exp> =>? Sum::new(pat, typ, exp).map_err(|err| ParseError::User { error: DecodeErr::SystemErr(err) });
+Unv: Unv = "□" => Unv::new();
+
+Fst: Exp = {
+    <Obj>,
+    <fst:Fst> <obj:Obj> => Exp::App(App::new(fst, obj)),
+}
+
+Snd: Exp = {
+    <Obj>,
+    <abs:Abs> => Exp::Abs(abs),
+    <prd:Prd> => Exp::Prd(prd),
+    <sum:Sum> => Exp::Sum(sum),
+}
+
+extern {
+    type Location = usize;
+    type Error = DecodeErr;
+
+    enum Tok {
+        "$" => Tok::Ident(<String>),
+        "(" => Tok::LParen,
+        ")" => Tok::RParen,
+        "." => Tok::Dot,
+        ":" => Tok::Colon,
+        "λ" => Tok::Lambda,
+        "Π" => Tok::Pi,
+        "Σ" => Tok::Sigma,
+        "□" => Tok::Box,
+    }
+}

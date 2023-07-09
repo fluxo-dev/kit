@@ -1,15 +1,14 @@
 //! Stratified type universe.
 
-use super::OverflowErr;
+use crate::err::SystemErr;
+use crate::fmt::Formatted;
 use std::fmt::{Display, Formatter};
 
-type Formatted = std::fmt::Result;
-
-/// Universe, which refers to the realm where types exist.
+/// Universe, aka *sort*, which refers to a space where types exist.
 ///
 /// In principle, there are an infinite number of universes, with each universe assigned a distinct
 /// natural number starting with 0. For practical reasons, levels higher than [u64::MAX] will cause
-/// an [OverflowErr][super::err::OverflowErr]. Universes are cumulative: a type that belongs to any
+/// an [SystemErr][crate::err::SystemErr]. Universes are cumulative: a type that belongs to any
 /// given level 'N' automatically belongs to universes at higher levels.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
 pub struct Unv {
@@ -24,13 +23,11 @@ impl Unv {
     }
 
     /// Create a new universe at a level higher that the current.
-    pub fn inc(&self) -> Result<Self, OverflowErr> {
+    pub fn inc(&self) -> Result<Self, SystemErr> {
         self.level
             .checked_add(1)
             .map(|level| Self { level })
-            .ok_or_else(|| OverflowErr {
-                msg: format!("Unable to construct universe at level > {}!", self.level),
-            })
+            .ok_or(SystemErr::MaxLimitUnv(self.level))
     }
 }
 
@@ -83,7 +80,7 @@ mod test {
     }
 
     #[test]
-    fn test_display() -> Result<(), OverflowErr> {
+    fn test_display() -> Result<(), SystemErr> {
         let o1 = Unv::new();
         let o2 = o1.inc()?;
         let o3 = o2.inc()?;

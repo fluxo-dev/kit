@@ -1,6 +1,7 @@
 //! Top-level entity within the Abstract Syntax Tree (AST).
 
-use super::{Abs, App, DecodeErr, Idx, OverflowErr, Prd, Sum, Sym, Unv, Var};
+use super::{Abs, App, Idx, Prd, Sum, Sym, Unv, Var};
+use crate::err::SystemErr;
 
 /// Expression, which is the top-level entity within the AST.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -32,15 +33,6 @@ pub trait Binder {
     fn exp(&self) -> &Exp;
 }
 
-/// Trait that maps an [expression][Exp] from and to an encoding of type `T`.
-pub trait Codec<T> {
-    /// Encode an [expression][Exp] to an object of type `T`.
-    fn encode(&self, exp: &Exp) -> T;
-
-    /// Decode an value of type `T` to an [expression][Exp].
-    fn decode(&self, val: &T) -> Result<Exp, DecodeErr>;
-}
-
 impl Exp {
     /// Generates De Bruijn indices for this expression.
     ///
@@ -48,12 +40,12 @@ impl Exp {
     /// into an index if it references the same symbol. If the scan traverses another binder, we
     /// increment the index value before continuing. This ensures that an index counts the number
     /// of binders in between its current position and the binder that binds it.
-    pub fn index(&mut self, sym: &Sym, idx: &Idx) -> Result<(), OverflowErr> {
+    pub fn index(&mut self, sym: &Sym, idx: &Idx) -> Result<(), SystemErr> {
         match self {
             Exp::Var(var) => {
                 if let Var::Sym(can) = var {
                     if can == sym {
-                        *var = Var::Idx(*idx); // matches, so convert variable to index
+                        *var = Var::Idx(idx.clone()); // matches, so convert variable to index
                         Ok(())
                     } else {
                         Ok(()) // no match
